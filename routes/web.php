@@ -16,5 +16,5 @@ Route::post('/register', [UserController::class, 'register'])->name('register.su
 // Protected routes
 Route::middleware('auth')->group(function() {
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
-    Route::get('/logout', [UserController::class, 'webLogout'])->name('logout');
+    Route::post('/logout', [UserController::class, 'webLogout'])->name('logout');
 });
