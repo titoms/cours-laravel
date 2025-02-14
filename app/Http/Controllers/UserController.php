@@ -18,6 +18,10 @@ class UserController extends Controller
         return view('auth.register');
     }
 
+    public function showDashboard() {
+        return view('dashboard');
+    }
+
     /**
      * Display a listing of the resource.
      */
