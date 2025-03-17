@@ -56,6 +56,27 @@ class UserController extends Controller
     }
 
     /**
+     * Login a user.
+     */
+    public function login(Request $request) {
+
+    }
+
+    /**
+     * Logout the current logged in user
+     */
+    public function logout(Request $request) {
+
+    }
+
+    /**
+     * Get current logged in user information
+     */
+    public function me(Request $request) {
+        return response()->json($request->user());
+    }
+
+    /**
      * Display the specified resource.
      */
     // Get One User
