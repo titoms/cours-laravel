@@ -1,0 +1,45 @@
+Installation des outils :
+
+- Installez Git si pas déja fait
+
+Mac :
+
+    - Installer Homebrew
+    - Installer php avec brew
+    - Installer composer
+    - Installer laravel
+
+
+Windows :
+
+    - Installer Xampp/Wamp
+    - Installer Composer
+    - Installer Laravel
+
+        composer global require laravel/installer
+        laravel new nom-du-projet
+
+#########
+# MVC : #
+#########
+
+Modèle :
+    Fichier qui schématise la structure des données
+    Exemple :
+
+        User:
+            -id
+            -name
+            -email
+            ...
+
+Vue :
+    Fichier qui récupère des données et qui les affiche a l'utilisateur.
+    Souvent c'est utilisé avec un moteur de Templating (Liquid, Blade, Twig...)
+
+Routes :
+    C'est ce qui définis sur quel chemin je fais quelle requête.
+    (Pour un webservices, c'est ce qui définis les endpoints de l'API)
+
+Controller : 
+    Fichier intermédiaire entre le modèle et la vue. C'est lui qui réçoit les requêtes de l'utilisateur et qui définis ce que l'on fait.
