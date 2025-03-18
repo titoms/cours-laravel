@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -16,10 +17,6 @@ class UserController extends Controller
     public function showRegister() {
         return view('auth.register');
     }
-
-    // public function showProfile() {
-    //     return view('auth.profile');
-    // }
 
     /**
      * Display a listing of the resource.
@@ -44,14 +41,22 @@ class UserController extends Controller
                 'username' => 'required|string|max:255|unique:users',
                 'email' => 'required|email|unique:users',
                 'password' => 'required|string|min:4',
+                'bio' => 'nullable|string|max:1000',
+                'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
+
+            $profilePicturePath = null;
+            if ($request->hasFile('profile_picture')) {
+                $profilePicturePath = $request->file('profile_picture')->store('profile_pictures', 'public');
+                $profilePicturePath = Storage::url($profilePicturePath);
+            }
     
             $user = User::create([
                 'username' => $request->username,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
                 'bio' => $request->bio,
-                'profile_picture' => $request->profile_picture
+                'profile_picture' => $profilePicturePath,
             ]);
 
             if ($request->wantsJson()) {
