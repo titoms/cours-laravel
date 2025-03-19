@@ -47,8 +47,11 @@ class UserController extends Controller
 
             $profilePicturePath = null;
             if ($request->hasFile('profile_picture')) {
-                $profilePicturePath = $request->file('profile_picture')->store('profile_pictures', 'public');
-                $profilePicturePath = Storage::url($profilePicturePath);
+                // Store the file in the public disk under profile_pictures directory
+                $file = $request->file('profile_picture');
+                $filename = $file->hashName();
+                $file->move(public_path('storage/profile_pictures'), $filename);
+                $profilePicturePath = 'profile_pictures/' . $filename;
             }
     
             $user = User::create([
