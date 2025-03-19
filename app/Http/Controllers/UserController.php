@@ -105,15 +105,12 @@ class UserController extends Controller
         if (auth()->attempt($credentials)) {
             $user = auth()->user();
             
-            if ($request->wantsJson()) {
-                $token = $user->createToken('auth_token')->plainTextToken;
-                return response()->json([
-                    'message' => 'User logged in successfully',
-                    'user' => $user,
-                    'token' => $token
-                ], 200);
-            }
-            
+            $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'message' => 'User logged in successfully',
+                'user' => $user,
+                'token' => $token
+            ], 200);
             return redirect()->route('profile')->with('success', 'Logged in successfully!');
         }
         
