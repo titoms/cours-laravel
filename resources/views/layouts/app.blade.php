@@ -18,7 +18,7 @@
         @include('components.navbar')
 
         <!-- Contenu principal -->
-        <main class="flex-1">
+        <main class="flex-1 m-24">
             @yield('content')
         </main>
 

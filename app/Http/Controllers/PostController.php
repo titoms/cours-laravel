@@ -5,9 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
+
+    public function showCreatePost() {
+        return view('posts.createPost');
+    }
+
+    public function showUpdatePost() {
+        return view('posts.updatePost');
+    }
+
+    public function showNewsFeed() {
+        $posts = Post::with('user')->orderBy('created_at', 'desc')->get();
+        return view('posts.newsFeed', compact('posts'));
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -26,14 +41,7 @@ class PostController extends Controller
     public function createPost(Request $request)
     {
         try {
-            // Log the incoming request data for debugging
-            Log::info('Post creation request', [
-                'all_data' => $request->all(),
-                'has_file' => $request->hasFile('image'),
-                'files' => $request->allFiles(),
-                'headers' => $request->header()
-            ]);
-            
+          
             // Check if the request is properly formatted
             if (!$request->hasFile('image')) {
                 return response()->json([
@@ -46,7 +54,6 @@ class PostController extends Controller
             
             // Validate after checking for file existence
             $validated = $request->validate([
-                'user_id' => 'required|exists:users,id',
                 'description' => 'nullable|string|max:1000',
                 'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
@@ -55,7 +62,6 @@ class PostController extends Controller
             $imagePath = null;
             $file = $request->file('image');
             $filename = $file->hashName();
-            
             // Make sure the directory exists
             if (!file_exists(public_path('storage/post_images'))) {
                 mkdir(public_path('storage/post_images'), 0755, true);
@@ -64,71 +70,123 @@ class PostController extends Controller
             $file->move(public_path('storage/post_images'), $filename);
             $imagePath = 'post_images/' . $filename;
             
-            // Create the post with the image path
+            // Create the post with the image path and authenticated user ID
             $post = Post::create([
-                'user_id' => $request->user_id,
+                'user_id' => Auth::id(),
                 'description' => $request->description,
                 'image' => $imagePath,
                 'likes_count' => 0,
             ]);
     
-            return response()->json([
-                'message' => 'Post created successfully',
-                'post' => $post,
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation error', 
-                'errors' => $e->errors(),
-                'request_data' => $request->all()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error creating post: '. $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'request_data' => $request->all()
-            ], 500);
-        }
-    }
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Post created successfully',
+                    'post' => $post,
+                ], 201);
+            }
+            return redirect()->route('newsFeed')->with('success', 'Post created successfully');
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Validation error', 
+                    'errors' => $e->errors(),
+                    'request_data' => $request->all()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Error creating post: '. $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'request_data' => $request->all()
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'Error creating post: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Post $post)
+    public function getOnePost(Post $post)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Post $post)
-    {
-        //
+        return response()->json($post);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Post $post)
+    public function updatePost(Request $request, $id)
     {
-        //
+        try {
+            $post = Post::find($id);
+            if (!$post) {
+                return response()->json(['message' => 'Post not found'], 404);
+            }
+
+            $validatedData = $request->validate([
+                'description' => 'nullable|string|max:1000',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
+
+            // Store the file
+            $imagePath = null;
+            $file = $request->file('image');
+            $filename = $file->hashName();
+            // Make sure the directory exists
+            if (!file_exists(public_path('storage/post_images'))) {
+                mkdir(public_path('storage/post_images'), 0755, true);
+            }
+            
+            $file->move(public_path('storage/post_images'), $filename);
+            $imagePath = 'post_images/' . $filename;
+
+            $post->description = $request->description;
+            $post->image = $imagePath;
+            $post->save();
+            
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Post updated', 'post' => $post], 200);
+            }
+            return redirect()->route('newsFeed')->with('success', 'Post updated successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+            }
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Error updating post: '. $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Error updating post: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Post $post)
+    public function deletePost($id)
     {
-        //
+        try {
+            $post = Post::find($id);
+            if (!$post) {
+                return response()->json(['message' => 'Post not found'], 404);
+            }
+    
+            $post->delete();
+            
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Post deleted'], 200);
+            }
+            return redirect()->route('newsFeed')->with('success', 'Post deleted successfully');
+        } catch (\Exception $e) {
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Error deleting post: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Error deleting post: ' . $e->getMessage());
+        }
     }
 }
