@@ -1,4 +1,4 @@
-<nav class="fixed top-0 left-0 w-full bg-slate-800 shadow-lg">
+<nav class="fixed top-0 left-0 w-full bg-slate-800 shadow-lg z-[9999]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
             
