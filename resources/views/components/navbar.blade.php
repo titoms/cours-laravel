@@ -4,15 +4,19 @@
             
             <!-- Logo -->
             <div class="text-xl font-bold text-white">
-                <a href="{{ route('home') }}">Mon Site</a>
+                <a href="{{ route('home') }}">Feisbouk</a>
             </div>
 
             <!-- Boutons Desktop -->
             <div class="hidden md:flex space-x-4">
                 @auth
+                    <a href="{{ route('newsFeed') }}" class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                        News Feed
+                    </a>
                     <a href="{{ route('profile') }}" class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
                         Profile
                     </a>
+
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-red-700 rounded-md hover:bg-red-800">
