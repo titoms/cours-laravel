@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
@@ -25,31 +26,43 @@ class PostController extends Controller
     public function createPost(Request $request)
     {
         try {
-            $request->validate([
+            // Log the incoming request data for debugging
+            Log::info('Post creation request', [
+                'all_data' => $request->all(),
+                'has_file' => $request->hasFile('image'),
+                'files' => $request->allFiles(),
+                'headers' => $request->header()
+            ]);
+            
+            // Check if the request is properly formatted
+            if (!$request->hasFile('image')) {
+                return response()->json([
+                    'message' => 'No image file found in request',
+                    'request_data' => $request->all(),
+                    'files' => $request->allFiles(),
+                    'content_type' => $request->header('Content-Type')
+                ], 400);
+            }
+            
+            // Validate after checking for file existence
+            $validated = $request->validate([
                 'user_id' => 'required|exists:users,id',
                 'description' => 'nullable|string|max:1000',
                 'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
     
-            // Debug information
-            if (!$request->hasFile('image')) {
-                return response()->json(['message' => 'No image file found in request'], 400);
-            }
-    
             // Store the file
             $imagePath = null;
-            if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                $filename = $file->hashName();
-                
-                // Make sure the directory exists
-                if (!file_exists(public_path('storage/post_images'))) {
-                    mkdir(public_path('storage/post_images'), 0755, true);
-                }
-                
-                $file->move(public_path('storage/post_images'), $filename);
-                $imagePath = 'post_images/' . $filename;
+            $file = $request->file('image');
+            $filename = $file->hashName();
+            
+            // Make sure the directory exists
+            if (!file_exists(public_path('storage/post_images'))) {
+                mkdir(public_path('storage/post_images'), 0755, true);
             }
+            
+            $file->move(public_path('storage/post_images'), $filename);
+            $imagePath = 'post_images/' . $filename;
             
             // Create the post with the image path
             $post = Post::create([
@@ -64,12 +77,17 @@ class PostController extends Controller
                 'post' => $post,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+            return response()->json([
+                'message' => 'Validation error', 
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error creating post: '. $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'request_data' => $request->all()
             ], 500);
         }
     }
