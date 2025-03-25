@@ -175,4 +175,35 @@ class PostController extends Controller
             return redirect()->back()->with('error', 'Error deleting post: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Toggle like status for a post
+     */
+    public function toggleLike($id)
+    {
+        try {
+            $post = Post::find($id);
+            if (!$post) {
+                return response()->json(['message' => 'Post not found'], 404);
+            }
+            
+            $user = Auth::user();
+            $isNowLiked = $post->toggleLike($user);
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'message' => $isNowLiked ? 'Post liked' : 'Post unliked',
+                    'likes_count' => $post->likes_count,
+                    'is_liked' => $isNowLiked
+                ], 200);
+            }
+            
+            return back();
+        } catch (\Exception $e) {
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Error toggling like: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Error toggling like: ' . $e->getMessage());
+        }
+    }
 }

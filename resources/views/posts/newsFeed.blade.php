@@ -67,11 +67,11 @@
                     
                     <div class="p-4">
                         <div class="flex items-center mb-4">
-                            <button class="flex items-center text-slate-400 hover:text-red-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button class="like-button flex items-center {{ Auth::user()->hasLiked($post) ? 'text-red-500' : 'text-slate-400' }} hover:text-red-500 transition-colors" data-post-id="{{ $post->id }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-1" fill="{{ Auth::user()->hasLiked($post) ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
-                                <span>{{ $post->likes_count }}</span>
+                                <span class="likes-count">{{ $post->likes_count }}</span>
                             </button>
                         </div>
                         
@@ -270,6 +270,85 @@
                 // Add to document and submit
                 document.body.appendChild(tempForm);
                 tempForm.submit();
+            });
+        });
+        
+        // Like button functionality
+        document.querySelectorAll('.like-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const postId = this.getAttribute('data-post-id');
+                const likeButton = this;
+                const likesCountElement = likeButton.querySelector('.likes-count');
+                const heartIcon = likeButton.querySelector('svg');
+                
+                // Create form data with CSRF token
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                
+                // Show immediate visual feedback before server response
+                const currentlyLiked = likeButton.classList.contains('text-red-500');
+                const currentCount = parseInt(likesCountElement.textContent || '0');
+                
+                // Toggle appearance immediately for better UX
+                if (currentlyLiked) {
+                    likeButton.classList.remove('text-red-500');
+                    likeButton.classList.add('text-slate-400');
+                    heartIcon.setAttribute('fill', 'none');
+                    likesCountElement.textContent = Math.max(0, currentCount - 1);
+                } else {
+                    likeButton.classList.remove('text-slate-400');
+                    likeButton.classList.add('text-red-500');
+                    heartIcon.setAttribute('fill', 'currentColor');
+                    likesCountElement.textContent = currentCount + 1;
+                }
+                
+                // Send AJAX request to toggle like
+                fetch(`/posts/${postId}/like`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Like response:', data);
+                    
+                    // Update like count with the actual count from server
+                    likesCountElement.textContent = data.likes_count;
+                    
+                    // Update button appearance based on actual status from server
+                    if (data.is_liked) {
+                        likeButton.classList.remove('text-slate-400');
+                        likeButton.classList.add('text-red-500');
+                        heartIcon.setAttribute('fill', 'currentColor');
+                    } else {
+                        likeButton.classList.remove('text-red-500');
+                        likeButton.classList.add('text-slate-400');
+                        heartIcon.setAttribute('fill', 'none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revert the UI changes if there was an error
+                    if (currentlyLiked) {
+                        likeButton.classList.remove('text-slate-400');
+                        likeButton.classList.add('text-red-500');
+                        heartIcon.setAttribute('fill', 'currentColor');
+                    } else {
+                        likeButton.classList.remove('text-red-500');
+                        likeButton.classList.add('text-slate-400');
+                        heartIcon.setAttribute('fill', 'none');
+                    }
+                    likesCountElement.textContent = currentCount;
+                });
             });
         });
         

@@ -31,4 +31,7 @@ Route::middleware('auth')->group(function() {
     // Add these new routes for PUT and DELETE methods
     Route::put('/posts/{id}', [PostController::class, 'updatePost'])->name('updatePost.put');
     Route::delete('/posts/{id}/delete', [PostController::class, 'deletePost'])->name('deletePost');
+    
+    // Add route for toggling post likes
+    Route::post('/posts/{id}/like', [PostController::class, 'toggleLike'])->name('posts.like');
 });
