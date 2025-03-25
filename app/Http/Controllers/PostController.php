@@ -129,23 +129,10 @@ class PostController extends Controller
 
             $validatedData = $request->validate([
                 'description' => 'nullable|string|max:1000',
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
-            // Store the file
-            $imagePath = null;
-            $file = $request->file('image');
-            $filename = $file->hashName();
-            // Make sure the directory exists
-            if (!file_exists(public_path('storage/post_images'))) {
-                mkdir(public_path('storage/post_images'), 0755, true);
-            }
-            
-            $file->move(public_path('storage/post_images'), $filename);
-            $imagePath = 'post_images/' . $filename;
-
+            // Only update the description, keep the existing image
             $post->description = $request->description;
-            $post->image = $imagePath;
             $post->save();
             
             if ($request->wantsJson()) {

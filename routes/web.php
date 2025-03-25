@@ -27,7 +27,8 @@ Route::middleware('auth')->group(function() {
 
     Route::get('/posts/{id}', [PostController::class, 'showUpdatePost'])->name('updatePost');
     Route::post('/posts/{id}', [PostController::class, 'updatePost'])->name('updatePost.submit');
-
-    Route::get('/posts/{id}/delete', [PostController::class, 'showDeletePost'])->name('deletePost');
-    Route::post('/posts/{id}/delete', [PostController::class, 'deletePost'])->name('deletePost.submit');
+    
+    // Add these new routes for PUT and DELETE methods
+    Route::put('/posts/{id}', [PostController::class, 'updatePost'])->name('updatePost.put');
+    Route::delete('/posts/{id}/delete', [PostController::class, 'deletePost'])->name('deletePost');
 });
