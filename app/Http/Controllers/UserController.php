@@ -95,30 +95,36 @@ class UserController extends Controller
      * Login a user.
      */
     public function login(Request $request) {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
-        $credentials = $request->only('email', 'password');
-        
-        if (auth()->attempt($credentials)) {
-            $user = auth()->user();
+            $credentials = $request->only('email', 'password');
             
-            $token = $user->createToken('auth_token')->plainTextToken;
-            return response()->json([
-                'message' => 'User logged in successfully',
-                'user' => $user,
-                'token' => $token
-            ], 200);
+            if (auth()->attempt($credentials)) {
+                $user = auth()->user();
+                
+                $token = $user->createToken('auth_token')->plainTextToken;
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'message' => 'User logged in successfully',
+                        'user' => $user,
+                        'token' => $token
+                    ], 200);
+                } else {
+                    return redirect()->route('profile')->with('success', 'Logged in successfully!');
+                }
+            }
+            
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
+            }
             return redirect()->route('profile')->with('success', 'Logged in successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Invalid credentials')->withInput();
         }
-        
-        if ($request->wantsJson()) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-        
-        return redirect()->back()->with('error', 'Invalid credentials')->withInput();
     }
 
     /**
